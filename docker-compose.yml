@@ -1,0 +1,13 @@
+services:
+  lottery-ledger:
+    build: .
+    container_name: lottery-ledger
+    restart: unless-stopped
+    ports:
+      - "5174:5174"
+    volumes:
+      - ./server/data:/app/server/data
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 5174

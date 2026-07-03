@@ -1,0 +1,25 @@
+{
+  "name": "football-lottery-ledger",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"node --no-warnings server/index.js\" \"vite --host 127.0.0.1\"",
+    "build": "vite build",
+    "start": "NODE_ENV=production node --no-warnings server/index.js"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "concurrently": "^9.2.1",
+    "express": "^5.1.0",
+    "lucide-react": "^0.468.0",
+    "multer": "^2.0.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.15.4",
+    "vite": "^5.4.20",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {}
+}
