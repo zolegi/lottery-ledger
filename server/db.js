@@ -301,10 +301,12 @@ export function normalizeBet(input) {
   }
 
   const stake = toNumber(input.stake);
-  const returnAmount = toNumber(input.returnAmount ?? input.return_amount);
-  const profit = round(returnAmount - stake);
+  const rawReturnAmount = input.returnAmount ?? input.return_amount;
+  const hasReturnAmount = hasFilledAmount(rawReturnAmount);
+  const returnAmount = hasReturnAmount ? toNumber(rawReturnAmount) : 0;
+  const profit = hasReturnAmount ? round(returnAmount - stake) : 0;
   const note = String(input.note || "").trim();
-  const status = inferStatus({ profit, stake, returnAmount });
+  const status = inferStatus({ profit, stake, returnAmount, hasReturnAmount });
 
   return {
     ledgerId,
@@ -320,11 +322,12 @@ export function normalizeBet(input) {
   };
 }
 
-export function inferStatus({ profit, stake, returnAmount }) {
-  if (stake === 0 && returnAmount === 0) return "未结算";
-  if (round(profit) === 0) return "走水";
-  if (profit > 0) return "命中";
-  if (profit < 0) return "亏损";
+export function inferStatus({ profit, stake, returnAmount, hasReturnAmount = true }) {
+  if (!hasReturnAmount) return "未结算";
+  const roundedProfit = round(profit ?? returnAmount - stake);
+  if (roundedProfit === 0) return "走水";
+  if (roundedProfit > 0) return "命中";
+  if (roundedProfit < 0) return "亏损";
   return "未结算";
 }
 
@@ -343,14 +346,21 @@ function normalizeStoredStatuses() {
     `
     UPDATE bets
     SET status = CASE
-      WHEN stake = 0 AND return_amount = 0 THEN '未结算'
+      WHEN status = '未结算' AND return_amount = 0 THEN '未结算'
       WHEN ROUND(return_amount - stake, 2) = 0 THEN '走水'
       WHEN return_amount > stake THEN '命中'
       ELSE '亏损'
     END,
-    profit = ROUND(return_amount - stake, 2)
+    profit = CASE
+      WHEN status = '未结算' AND return_amount = 0 THEN 0
+      ELSE ROUND(return_amount - stake, 2)
+    END
     `
   ).run();
+}
+
+function hasFilledAmount(value) {
+  return value !== "" && value !== null && value !== undefined && String(value).trim() !== "";
 }
 
 function firstLedger() {
