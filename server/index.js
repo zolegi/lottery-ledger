@@ -142,8 +142,8 @@ app.get("/api/export.csv", (req, res, next) => {
         bet.match,
         bet.pick,
         bet.stake,
-        bet.returnAmount,
-        bet.profit,
+        bet.status === "未结算" ? "" : bet.returnAmount,
+        bet.status === "未结算" ? "" : bet.profit,
         bet.score,
         bet.status,
         bet.note

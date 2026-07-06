@@ -40,6 +40,7 @@ function parseLedgerSheet(sheet) {
     profit: indexOf("盈利", "亏损", "利润", "盈亏"),
     returnAmount: indexOf("结余", "返还", "返回"),
     score: headers.findIndex((header) => header.includes("实际比分") || header === "比分" || header.includes("赛果")),
+    status: indexOf("状态", "结果"),
     note: indexOf("备注")
   };
 
@@ -52,7 +53,9 @@ function parseLedgerSheet(sheet) {
     const match = textValue(rawRow, textRow, idx.match);
     const stake = toNumber(cellValue(rawRow, idx.stake));
     const rawReturnAmount = cellValue(rawRow, idx.returnAmount);
-    const hasReturnAmount = hasFilledAmount(rawReturnAmount);
+    const importedStatus = normalizeStatus(textValue(rawRow, textRow, idx.status));
+    const importedUnsettled = importedStatus === "未结算";
+    const hasReturnAmount = !importedUnsettled && hasFilledAmount(rawReturnAmount);
     const returnAmount = hasReturnAmount ? toNumber(rawReturnAmount) : 0;
     const rawProfit = cellValue(rawRow, idx.profit);
     const profit = hasReturnAmount ? toNumber(hasFilledAmount(rawProfit) ? rawProfit : returnAmount - stake) : 0;
@@ -65,10 +68,11 @@ function parseLedgerSheet(sheet) {
       pick: textValue(rawRow, textRow, idx.pick),
       stake,
       returnAmount,
+      hasReturnAmount,
       profit,
       score: textValue(rawRow, textRow, idx.score),
       note,
-      status: inferStatus({ profit, stake, returnAmount, hasReturnAmount })
+      status: importedUnsettled ? "未结算" : inferStatus({ profit, stake, returnAmount, hasReturnAmount })
     };
   });
 }
@@ -184,6 +188,11 @@ function toNumber(value) {
 
 function hasFilledAmount(value) {
   return value !== "" && value !== null && value !== undefined && String(value).trim() !== "";
+}
+
+function normalizeStatus(value) {
+  const text = String(value ?? "").trim();
+  return ["命中", "亏损", "走水", "未结算"].includes(text) ? text : "";
 }
 
 function cellValue(row, index) {

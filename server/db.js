@@ -302,7 +302,12 @@ export function normalizeBet(input) {
 
   const stake = toNumber(input.stake);
   const rawReturnAmount = input.returnAmount ?? input.return_amount;
-  const hasReturnAmount = hasFilledAmount(rawReturnAmount);
+  const importedReturnFlag = parseBooleanFlag(
+    input.hasReturnAmount ?? input.returnAmountFilled ?? input.return_amount_filled
+  );
+  const inputStatus = String(input.status || "").trim();
+  const statusMarksUnsettled = inputStatus === "未结算";
+  const hasReturnAmount = importedReturnFlag ?? (!statusMarksUnsettled && hasFilledAmount(rawReturnAmount));
   const returnAmount = hasReturnAmount ? toNumber(rawReturnAmount) : 0;
   const profit = hasReturnAmount ? round(returnAmount - stake) : 0;
   const note = String(input.note || "").trim();
@@ -361,6 +366,16 @@ function normalizeStoredStatuses() {
 
 function hasFilledAmount(value) {
   return value !== "" && value !== null && value !== undefined && String(value).trim() !== "";
+}
+
+function parseBooleanFlag(value) {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return undefined;
+    return !["false", "0", "否", "no"].includes(normalized);
+  }
+  return Boolean(value);
 }
 
 function firstLedger() {
